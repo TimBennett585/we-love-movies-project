@@ -8,13 +8,13 @@ exports.up = function (knex) {
       .foreign("critic_id")
       .references("critic_id")
       .inTable("critics")
-      .onDelete("cascade");
+      .onDelete("CASCADE");
     table.integer("movie_id").unsigned().notNullable();
     table
       .foreign("movie_id")
       .references("movie_id")
       .inTable("movies")
-      .onDelete("cascade");
+      .onDelete("CASCADE");
     table.timestamps(true, true);
   });
 };
