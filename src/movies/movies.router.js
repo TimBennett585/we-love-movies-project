@@ -8,7 +8,7 @@ router
   .all(methodNotAllowed);
 
 router
-  .route("/movieId/reviews")
+  .route("/:movieId/reviews")
   .get(controller.listReviews)
   .all(methodNotAllowed);
 

@@ -1,39 +1,35 @@
 const service = require("./reviews.service");
 const asyncErrorBoundary = require("../errors/asyncErrorBoundary");
-const hasProperties = require("../errors/hasProperties");
 
 //middleware
-
-const VALID_PROPERTIES = ["score", "content"];
-
-function hasOnlyValidProperties(req, res, next) {
-  const { data = {} } = req.body;
-
-  const invalidFields = Object.keys(data).filter(
-    (field) => !VALID_PROPERTIES.includes(field)
-  );
-
-  if (invalidFields.length) {
-    return next({
-      status: 400,
-      message: `Invalid field(s): ${invalidFields.join(", ")}`,
-    });
-  }
-  next();
-}
-
-const hasRequiredProperties = hasProperties("score", "title");
 
 async function reviewExists(req, res, next) {
   const { reviewId } = req.params;
 
   const review = await service.read(reviewId);
-  if (review) {
-    res.locals.review = review[0];
-    return next();
+  if (review.length === 0 || !reviewId) {
+    return next({ status: 404, message: `Missing score or content in body.` });
   }
-  return next({ status: 400, message: `Missing score or content in body.` });
+  res.locals.review = review[0];
+  return next();
 }
+
+function updatedBody(res, req, next) {
+  const { data: { score = null, content = null } = {} } = req.body;
+  let update = {};
+  if (!score && !content) {
+    return next({ status: 400, message: `Missing score or content in body` });
+  }
+  if (score) {
+    update.score = score;
+  }
+  if (content) {
+    update.content = content;
+  }
+  res.locals.update = update;
+}
+
+//executive functions
 
 async function read(req, res) {
   res.status(200).json({ data: res.locals.review });
@@ -56,11 +52,6 @@ async function destroy(req, res) {
 
 module.exports = {
   read: [asyncErrorBoundary(reviewExists), read],
-  put: [
-    asyncErrorBoundary(reviewExists),
-    hasOnlyValidProperties,
-    hasRequiredProperties,
-    asyncErrorBoundary(put),
-  ],
+  put: [asyncErrorBoundary(reviewExists), updatedBody, asyncErrorBoundary(put)],
   delete: [asyncErrorBoundary(reviewExists), asyncErrorBoundary(destroy)],
 };

@@ -4,18 +4,19 @@ const { as } = require("../db/connection");
 
 //middleware
 
+//checks to make sure that the provided movieId actually relates to a movie in the db, if not: error message, if so: adds that movie to the response.
 async function movieExists(req, res, next) {
   const { movieId } = req.params;
 
   const movie = await service.read(Number(movieId));
-  if (movie) {
-    res.locals.movie = movie[0];
-    return next();
+  if (movie.length === 0 || !movieId) {
+    return next({
+      status: 404,
+      message: `movieId: ${movieId} does not exist in the database`,
+    });
   }
-  return next({
-    status: 404,
-    message: `movieId: ${movieId} does not exist in the database`,
-  });
+  res.locals.movie = movie[0];
+  return next();
 }
 
 //executive functions
@@ -54,7 +55,13 @@ async function listTheaters(req, res) {
 
 module.exports = {
   list: asyncErrorBoundary(list),
-  read: [movieExists, asyncErrorBoundary(read)],
-  listReviews: [movieExists, asyncErrorBoundary(listReviews)],
-  listTheaters: [movieExists, asyncErrorBoundary(listTheaters)],
+  read: [asyncErrorBoundary(movieExists), asyncErrorBoundary(read)],
+  listReviews: [
+    asyncErrorBoundary(movieExists),
+    asyncErrorBoundary(listReviews),
+  ],
+  listTheaters: [
+    asyncErrorBoundary(movieExists),
+    asyncErrorBoundary(listTheaters),
+  ],
 };
