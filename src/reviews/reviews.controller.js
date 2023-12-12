@@ -8,25 +8,27 @@ async function reviewExists(req, res, next) {
 
   const review = await service.read(reviewId);
   if (review.length === 0 || !reviewId) {
-    return next({ status: 404, message: `Missing score or content in body.` });
+    return next({ status: 404, message: `Review cannot be found.` });
   }
   res.locals.review = review[0];
   return next();
 }
 
-function updatedBody(res, req, next) {
+function updatedBody(req, res, next) {
   const { data: { score = null, content = null } = {} } = req.body;
-  let update = {};
-  if (!score && !content) {
+  console.log(req.body);
+  let updateBody = {};
+  if (!content) {
     return next({ status: 400, message: `Missing score or content in body` });
   }
   if (score) {
-    update.score = score;
+    updateBody.score = score;
   }
   if (content) {
-    update.content = content;
+    updateBody.content = content;
   }
-  res.locals.update = update;
+  res.locals.update = updateBody;
+  return next();
 }
 
 //executive functions
